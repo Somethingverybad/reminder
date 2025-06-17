@@ -2,3 +2,4 @@ todolist/tasks/__pycache__
 todolist/tasks/migrations
 todolist/todolist/__pycache__
 venv
+.idea
