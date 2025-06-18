@@ -3,3 +3,6 @@ todolist/tasks/migrations
 todolist/todolist/__pycache__
 venv
 .idea
+backend/todolist/tasks/__pycache__
+backend/todolist/tasks/migrations/__pycache__
+backend/todolist/todolist/__pycache__

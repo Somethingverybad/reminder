@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -75,12 +77,20 @@ WSGI_APPLICATION = 'todolist.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get("POSTGRES_DB"),
+        'USER': os.environ.get("POSTGRES_USER"),
+        'PASSWORD': os.environ.get("POSTGRES_PASSWORD"),
+        'HOST': 'db',
+        'PORT': 5432,
     }
 }
+
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+
 
 
 # Password validation
@@ -125,9 +135,23 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # или redis://redis:6379/0 в Docker
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 # django-celery-beat
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULE = {
+    # Каждые 10 минут обновлять кеш предстоящих задач
+    'cache-upcoming-tasks-every-10-minutes': {
+        'task': 'tasks.tasks.cache_upcoming_tasks',
+        'schedule': 600.0,  # 600 секунд = 10 минут
+    },
+    # Каждую секунду проверять кеш на просроченные задачи и уведомлять
+    'notify-from-cache-every-second': {
+        'task': 'tasks.tasks.notify_from_cache',
+        'schedule': 1.0,  # 1 секунда
+    },
+}
