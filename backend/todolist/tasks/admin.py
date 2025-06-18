@@ -1,8 +1,9 @@
 from django.contrib import admin
-from .models import Task, Category
+from .models import Task, Category,TelegramUser
 
 
 admin.site.register(Category)
+admin.site.register(TelegramUser)
 
 from tasks.tasks import notify_due_tasks  # импорт задачи Celery
 

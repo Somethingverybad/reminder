@@ -2,38 +2,51 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    build:
+      context: ./backend/todolist
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
+      - ./backend/todolist:/app
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ./backend/todolist/.env
     depends_on:
       - db
       - redis
 
   worker:
-    build: .
+    build:
+      context: ./backend/todolist
     command: celery -A todolist worker --loglevel=info
     volumes:
-      - .:/app
+      - ./backend/todolist:/app
     env_file:
-      - .env
+      - ./backend/todolist/.env
     depends_on:
       - db
       - redis
 
   beat:
-    build: .
+    build:
+      context: ./backend/todolist
     command: celery -A todolist beat --loglevel=info
     volumes:
-      - .:/app
+      - ./backend/todolist:/app
     env_file:
-      - .env
+      - ./backend/todolist/.env
     depends_on:
       - db
+      - redis
+
+  bot:
+    build:
+      context: ./bot
+    command: python bot_main.py
+    volumes:
+      - ./bot:/app
+    depends_on:
+      - web
       - redis
 
   db:

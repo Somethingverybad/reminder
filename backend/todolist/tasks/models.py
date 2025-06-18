@@ -21,16 +21,24 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class TelegramUser(models.Model):
+    telegram_id = models.BigIntegerField(unique=True)
+    username = models.CharField(max_length=255, blank=True, null=True)
+    first_name = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.username or str(self.telegram_id)
 
 class Task(models.Model):
     id = models.CharField(primary_key=True, max_length=16, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(TelegramUser, to_field='telegram_id', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateTimeField()
     is_done = models.BooleanField(default=False)
-    categories = models.ManyToManyField(Category, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -40,3 +48,4 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
