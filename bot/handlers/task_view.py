@@ -38,7 +38,11 @@ async def filter_tasks_by_category(callback: CallbackQuery, state: FSMContext):
             title = html.quote(task["title"])
             description = html.quote(task["description"] or "")
             due_date = datetime.fromisoformat(task["due_date"]).strftime("%d.%m.%Y %H:%M")
-            category_name = task.get("category", {}).get("name", "Без тега")
+            
+            # Безопасное получение названия категории
+            category = task.get("category")  # Возвращает None, если ключа нет
+            category_name = category.get("name", "Без тега") if category else "Без тега"
+            
             text = (
                 f"<b>{title}</b>\n🕓 <i>{due_date}</i>\n\n"
                 f"Описание:\n {description}\n\n"
