@@ -6,7 +6,8 @@ from handlers.simple_dialog import router
 
 API_TOKEN = BOT_TOKEN
 
-
+# В файле, где инициализируется бот (например, bot_main.py)
+#print(f"Используемый токен: {BOT_TOKEN}")  # Проверьте вывод
 async def main():
     bot = Bot(token=API_TOKEN)
     storage = MemoryStorage()

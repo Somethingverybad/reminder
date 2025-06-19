@@ -10,7 +10,9 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/todolist/.env
+      - ./.env
+    environment:
+      - TZ=America/Adak
     depends_on:
       - db
       - redis
@@ -22,7 +24,9 @@ services:
     volumes:
       - ./backend/todolist:/app
     env_file:
-      - ./backend/todolist/.env
+      - ./.env
+    environment:
+      - TZ=America/Adak
     depends_on:
       - db
       - redis
@@ -34,7 +38,9 @@ services:
     volumes:
       - ./backend/todolist:/app
     env_file:
-      - ./backend/todolist/.env
+      - ./.env
+    environment:
+      - TZ=America/Adak
     depends_on:
       - db
       - redis
@@ -45,6 +51,10 @@ services:
     command: python bot_main.py
     volumes:
       - ./bot:/app
+    env_file:
+      ./.env
+    environment:
+      - TZ=America/Adak
     depends_on:
       - web
       - redis

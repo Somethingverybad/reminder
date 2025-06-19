@@ -11,18 +11,23 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 import os
 
+# Загрузка .env из корня проекта
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+env_path = BASE_DIR / '.env'
+load_dotenv(env_path)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hon77#jet-ft^+ed85zxrv!8*_r@a@7!_5ixwdpp2n-em$456d'
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -143,15 +148,4 @@ CELERY_TASK_SERIALIZER = 'json'
 # django-celery-beat
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
-CELERY_BEAT_SCHEDULE = {
-    # Каждые 10 минут обновлять кеш предстоящих задач
-    'cache-upcoming-tasks-every-10-minutes': {
-        'task': 'tasks.tasks.cache_upcoming_tasks',
-        'schedule': 600.0,  # 600 секунд = 10 минут
-    },
-    # Каждую секунду проверять кеш на просроченные задачи и уведомлять
-    'notify-from-cache-every-second': {
-        'task': 'tasks.tasks.notify_from_cache',
-        'schedule': 1.0,  # 1 секунда
-    },
-}
+TELEGRAM_BOT_TOKEN = os.environ.get("BOT_TOKEN")

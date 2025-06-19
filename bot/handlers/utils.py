@@ -1,4 +1,5 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram import types
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup,KeyboardButton
 
 
 def categories_keyboard(categories):
@@ -23,6 +24,7 @@ def time_choice_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="🕔 5 мин", callback_data="time_5"),
+            InlineKeyboardButton(text="🕔 10 мин", callback_data="time_10"),
             InlineKeyboardButton(text="🕒 15 мин", callback_data="time_15"),
             InlineKeyboardButton(text="🕞 30 мин", callback_data="time_30")
         ],
@@ -34,3 +36,12 @@ def time_choice_keyboard():
     ])
 
 
+async def show_main_keyboard(message: types.Message):
+    kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📋 Мои задачи"), KeyboardButton(text="➕ Новая задача")],
+            [KeyboardButton(text="🏷 Теги")],
+            [KeyboardButton(text="❌ Отмена")]
+        ], resize_keyboard=True
+    )
+    await message.answer("Главное меню:", reply_markup=kb)

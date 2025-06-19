@@ -1,75 +1,87 @@
-# tasks/tasks.py
-
 import json
+import logging
+from datetime import datetime, timedelta
+from typing import List, Dict, Any
+
+import requests
 import redis
 from celery import shared_task
-from django.core.mail import send_mail
-from django.utils.timezone import now, timedelta
-from django.utils.dateparse import parse_datetime
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import models
+from django.utils.timezone import now
 from .models import Task
 
-# Подключение к Redis (укажи свои настройки при необходимости)
-redis_client = redis.Redis(host='redis', port=6379, db=0)
+# Инициализация логгера
+logger = logging.getLogger(__name__)
 
-
-def send_notification(task):
-    send_mail(
-        subject="Напоминание о задаче",
-        message=f"Задача '{task.title}' просрочена!",
-        from_email='bot@todolist.com',
-        recipient_list=[task.user.email],
+# Подключение к Redis
+try:
+    redis_client = redis.Redis(
+        host='redis',
+        port=6379,
+        db=0,
+        socket_timeout=5,
+        socket_connect_timeout=5
     )
+    redis_client.ping()  # Проверка соединения
+except redis.ConnectionError as e:
+    logger.error(f"Redis connection error: {e}")
+    raise
 
+@shared_task(bind=True, name='tasks.tasks.send_telegram_notification')
+def send_telegram_notification(self, chat_id: int, message: str):
+    """Отправка уведомления через Telegram Bot API с обработкой ошибок"""
+    try:
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "HTML"
+        }
+        response = requests.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+        return True
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Telegram notification failed: {e}")
+        self.retry(exc=e, countdown=60, max_retries=3)
+        return False
 
-@shared_task
-def notify_due_tasks():
-    # Старая задача, можно оставить или удалить, если перейдёшь на новый механизм
-    due_tasks = Task.objects.filter(due_date__lte=now(), is_done=False)
-    for task in due_tasks:
-        send_notification(task)
+@shared_task(bind=True, name='tasks.tasks.check_due_tasks')
+def check_due_tasks(self):
+    """Проверка задач, срок выполнения которых наступил, и отправка уведомлений"""
+    try:
+        now_time = now()
+        due_tasks = Task.objects.filter(
+            due_date__lte=now_time,
+            is_done=False
+        ).filter(
+            models.Q(last_reminder_sent__isnull=True) |
+            models.Q(last_reminder_sent__lt=models.F('due_date'))
+        ).select_related('user')
 
+        logger.info(f"Due tasks found: {due_tasks.count()}")
 
-@shared_task
-def cache_upcoming_tasks():
-    interval = timedelta(minutes=10)
-    now_time = now()
-    upcoming_time = now_time + interval
-    tasks = Task.objects.filter(
-        due_date__gte=now_time,
-        due_date__lte=upcoming_time,
-        is_done=False
-    ).values('id', 'due_date', 'title', 'user_id')
-
-    # Конвертируем к списку и сериализуем в JSON (из-за datetime - default=str)
-    tasks_json = json.dumps(list(tasks), default=str)
-    redis_client.set('upcoming_tasks', tasks_json)
-
-
-@shared_task
-def notify_from_cache():
-    tasks_json = redis_client.get('upcoming_tasks')
-    if not tasks_json:
-        return
-
-    tasks = json.loads(tasks_json)
-    now_time = now()
-    tasks_to_keep = []
-
-    for task in tasks:
-        task_due_dt = parse_datetime(task['due_date'])
-        if task_due_dt <= now_time:
-            # Отправляем уведомление
+        for task in due_tasks:
             try:
-                task_obj = Task.objects.get(id=task['id'])
-                send_notification(task_obj)
-                # Можно пометить задачу как выполненную или уведомленную
-                task_obj.is_done = True  # или отдельный флаг, если нужно
-                task_obj.save()
-            except Task.DoesNotExist:
-                # Если задачи уже нет, просто пропускаем
-                pass
-        else:
-            tasks_to_keep.append(task)
+                message = (
+                    f"🔔 Напоминание: {task.title}\n"
+                    f"📃 Описание: {task.description}"
+                    f"📅 Время: {task.due_date.strftime('%Y-%m-%d %H:%M')}"
+                )
 
-    # Обновляем кеш
-    redis_client.set('upcoming_tasks', json.dumps(tasks_to_keep, default=str))
+                send_telegram_notification.delay(task.user.telegram_id, message)
+
+                task.last_reminder_sent = now_time
+                task.is_done=True
+                task.save(update_fields=["last_reminder_sent", "is_done"])
+
+            except Exception as e:
+                logger.error(f"Failed to send reminder for task {task.id}: {e}")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"check_due_tasks failed: {e}")
+        self.retry(exc=e, countdown=60, max_retries=3)
+        return False
