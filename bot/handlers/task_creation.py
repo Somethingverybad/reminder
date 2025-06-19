@@ -1,43 +1,14 @@
 import logging
 from datetime import datetime, timedelta, date
-from aiogram import types
+from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-
-from services.django_api import get_tasks, create_task, update_task
+from aiogram.types import CallbackQuery, ReplyKeyboardMarkup, KeyboardButton
 from states import Form
+from services.django_api import create_task, get_categories
 from handlers.utils import date_choice_keyboard, time_choice_keyboard, categories_keyboard
-from handlers.simple_dialog import router
-from aiogram.utils.text_decorations import html_decoration as html
 
 logger = logging.getLogger(__name__)
-
-@router.message(lambda message: message.text == "📋 Мои задачи")
-async def show_user_tasks(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    category_id = data.get("filter_category")
-
-    tasks = await get_tasks(message.from_user.id, category=category_id)
-
-    if not tasks:
-        await message.answer("У вас пока нет задач.")
-        return
-
-    for task in tasks:
-        task_id = task["id"]
-        title = html.quote(task["title"])
-        description = html.quote(task["description"] or "")
-        due_date = datetime.fromisoformat(task["due_date"]).strftime("%d.%m.%Y %H:%M")
-        category_name = task.get("category", {}).get("name", "Без тега")
-
-        text = (f"<b>{title}</b>\n🕓 <i>{due_date}</i>\n\nОписание:\n {description}\n\n"
-                f"Тег: <i>{category_name}</i>")
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text=f"✅ Выполнить - {title}", callback_data=f"done:{task_id}")]
-            ]
-        )
-        await message.answer(text, reply_markup=keyboard, parse_mode="HTML")
+router = Router()
 
 @router.message(lambda message: message.text == "➕ Новая задача")
 async def start_new_task(message: types.Message, state: FSMContext):
@@ -140,7 +111,7 @@ async def finalize_task_creation(user_id: int, state: FSMContext, message_or_cbm
         if response.get("id"):
             await message_or_cbmsg.answer("✅ Задача успешно создана!")
 
-            categories = await get_categories()
+            categories = await get_categories(user_id=user_id)
             if categories:
                 await message_or_cbmsg.answer(
                     "Выберите категорию:",
@@ -157,31 +128,19 @@ async def finalize_task_creation(user_id: int, state: FSMContext, message_or_cbm
         await message_or_cbmsg.answer("❌ Ошибка создания задачи")
 
     await state.clear()
+    from handlers.main_menu import show_main_keyboard
     await show_main_keyboard(message_or_cbmsg)
 
 @router.callback_query(Form.task_category, lambda c: c.data.startswith("set_category:"))
 async def process_task_category(callback: CallbackQuery, state: FSMContext):
     category_id = callback.data.split(":")[1]
     data = await state.get_data()
-
-    if await update_task(data["task_id"], {"category": category_id}):
+    if await update_task(data["task_id"], {"category_id": category_id}):
         await callback.message.answer("✅ Категория сохранена")
     else:
         await callback.message.answer("❌ Ошибка сохранения категории")
 
     await callback.answer()
     await state.clear()
+    from handlers.main_menu import show_main_keyboard
     await show_main_keyboard(callback.message)
-
-@router.callback_query(lambda c: c.data.startswith("done:"))
-async def mark_task_done(callback: CallbackQuery):
-    task_id = callback.data.split(":")[1]
-
-    success = await update_task(task_id, {"is_done": True})
-
-    if success:
-        await callback.message.edit_text("✅ Задача отмечена как выполненная.")
-    else:
-        await callback.message.answer("❌ Не удалось обновить задачу.")
-
-    await callback.answer()
