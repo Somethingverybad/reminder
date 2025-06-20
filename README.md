@@ -10,37 +10,37 @@
 
 ### 1. Клонирование репозитория
 
-```git clone git@github.com:Somethingverybad/reminder.git```
+`git clone git@github.com:Somethingverybad/reminder.git`
 
 cd reminder
 
 ### 2. Настройка окружения
 Создайте файл конфигурации по примеру в .env_example:
 
-``cp .env_example .env``
+`cp .env_example .env`
 
 # Отредактируйте .env
 
 # Настройки PostgreSQL
-``POSTGRES_DB=reminder_db
-POSTGRES_USER=reminder_user
-POSTGRES_PASSWORD=your_strong_password_here `` # Замените на надежный пароль
+`POSTGRES_DB=reminder_db`
+`POSTGRES_USER=reminder_user`
+`POSTGRES_PASSWORD=your_strong_password_here`
 
 # Настройки бота
-``BOT_TOKEN=your_telegram_bot_token``  # Получите у @BotFather
+`BOT_TOKEN=your_telegram_bot_token`  # Получите у @BotFather
 
 # Безопасность Django
-``SECRET_KEY=your_django_secret_key``
+`SECRET_KEY=your_django_secret_key`
 
 ### 3. Генерация SECRET_KEY
 Выполните в терминале:
 
-``python -c "import secrets; print(secrets.token_urlsafe(50))"``
+`python -c "import secrets; print(secrets.token_urlsafe(50))"`
 Скопируйте вывод и вставьте в .env после SECRET_KEY=.
 
 ### 4. Запуск приложения
 Соберите и запустите контейнеры:
 
-``docker-compose build
-docker-compose up``
+`docker-compose build`
+`docker-compose up`
 
