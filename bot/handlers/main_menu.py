@@ -39,4 +39,4 @@ async def show_main_keyboard(message: types.Message):
             [KeyboardButton(text="❌ Отмена")]
         ], resize_keyboard=True
     )
-    await message.answer("Главное меню:", reply_markup=kb)
+    await message.answer("Главное меню", reply_markup=kb)
