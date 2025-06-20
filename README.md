@@ -10,7 +10,8 @@
 
 ### 1. Клонирование репозитория
 
-git clone git@github.com:Somethingverybad/reminder.git
+```git clone git@github.com:Somethingverybad/reminder.git```
+
 cd reminder
 
 ### 2. Настройка окружения
