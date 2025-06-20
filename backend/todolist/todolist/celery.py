@@ -14,10 +14,15 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 # Настройка расписания периодических задач
+
 app.conf.beat_schedule = {
-    'check-due-tasks-every-minute': {
-        'task': 'tasks.tasks.check_due_tasks',
-        'schedule': crontab(),  # каждую минуту
+    'send-due-task-reminders-every-minute': {
+        'task': 'tasks.tasks.send_due_task_reminders',
+        'schedule': crontab(minute='*'),
+    },
+    'delete-completed-tasks-every-10-minutes': {
+        'task': 'tasks.tasks.delete_completed_tasks',
+        'schedule': crontab(minute='*/10'),
     },
 }
 
