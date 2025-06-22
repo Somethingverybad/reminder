@@ -66,7 +66,7 @@ def check_due_tasks(self):
             try:
                 message = (
                     f"🔔 Напоминание: {task.title}\n"
-                    f"📃 Описание: {task.description}"
+                    f"📃 Описание: {task.description}\n"
                     f"📅 Время: {task.due_date.strftime('%Y-%m-%d %H:%M')}"
                 )
 
