@@ -6,3 +6,4 @@ venv
 backend/todolist/tasks/__pycache__
 backend/todolist/tasks/migrations/__pycache__
 backend/todolist/todolist/__pycache__
+.env

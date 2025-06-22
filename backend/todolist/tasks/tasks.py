@@ -47,14 +47,14 @@ def send_telegram_notification(self, chat_id: int, message: str):
         self.retry(exc=e, countdown=60, max_retries=3)
         return False
 
-@shared_task(bind=True, name='tasks.tasks.check_due_tasks')
-def check_due_tasks(self):
+@shared_task(bind=True, name='tasks.tasks.send_due_task_reminders')
+def send_due_task_reminders(self):
     """Проверка задач, срок выполнения которых наступил, и отправка уведомлений"""
     try:
         now_time = now()
         due_tasks = Task.objects.filter(
             due_date__lte=now_time,
-            is_done=False
+            is_done=False,
         ).filter(
             models.Q(last_reminder_sent__isnull=True) |
             models.Q(last_reminder_sent__lt=models.F('due_date'))
@@ -83,5 +83,32 @@ def check_due_tasks(self):
 
     except Exception as e:
         logger.error(f"check_due_tasks failed: {e}")
+        self.retry(exc=e, countdown=60, max_retries=3)
+        return False
+
+@shared_task(bind=True, name='tasks.tasks.delete_completed_tasks')
+def delete_completed_tasks(self):
+    """Удаление выполненных просроченных задач"""
+    try:
+        now_time = now()
+        completed_tasks = Task.objects.filter(
+            due_date__lte=now_time,
+            is_done=True,
+            remind_daily = False
+        )
+
+        logger.info(f"Tasks to delete: {completed_tasks.count()}")
+
+        for task in completed_tasks:
+            try:
+                logger.info(f"Удаляем задачу {task.id} - {task.title}")
+                task.delete()
+            except Exception as e:
+                logger.error(f"Failed to delete task {task.id}: {e}")
+
+        return True
+
+    except Exception as e:
+        logger.error(f"delete_completed_tasks failed: {e}")
         self.retry(exc=e, countdown=60, max_retries=3)
         return False
