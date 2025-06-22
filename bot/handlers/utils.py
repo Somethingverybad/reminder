@@ -23,14 +23,14 @@ def date_choice_keyboard():
 def time_choice_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🕔 Через 5 мин", callback_data="time_5"),
-            InlineKeyboardButton(text="🕔 Через 10 мин", callback_data="time_10"),
-            InlineKeyboardButton(text="🕒 Через 15 мин", callback_data="time_15"),
-            InlineKeyboardButton(text="🕞 Через 30 мин", callback_data="time_30")
+            InlineKeyboardButton(text="🕔 + 5 мин", callback_data="time_5"),
+            InlineKeyboardButton(text="🕔 + 10 мин", callback_data="time_10"),
+            InlineKeyboardButton(text="🕒 + 15 мин", callback_data="time_15"),
+            InlineKeyboardButton(text="🕞 + 30 мин", callback_data="time_30")
         ],
         [
-            InlineKeyboardButton(text="🕐 Через 1 час", callback_data="time_60"),
-            InlineKeyboardButton(text="🕕 Через 6 часов", callback_data="time_360")
+            InlineKeyboardButton(text="🕐 + 1 час", callback_data="time_60"),
+            InlineKeyboardButton(text="🕕 + 6 часов", callback_data="time_360")
         ],
         [InlineKeyboardButton(text="✏️ Ввести вручную", callback_data="time_manual")]
     ])
